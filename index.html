@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Content Refresh Scoring - Research Paper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        h2 { border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-top: 2rem; margin-bottom: 1rem; color: #111827; }
+        p { margin-bottom: 1rem; color: #374151; line-height: 1.7; }
+        ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; color: #374151; }
+        li { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body class="bg-gray-50 py-12">
+    <article class="max-w-3xl mx-auto bg-white p-8 md:p-12 shadow-sm border border-gray-200 rounded-lg">
+        
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">Predictive Content Refresh Scoring: Identifying Decaying Search Momentum</h1>
+            <div class="text-gray-600 font-medium">
+                <p>Syed Muhammad Ali</p>
+                <p>FAST-NUCES</p>
+                <p class="text-sm mt-2 text-indigo-600 font-semibold">Track: Refresh / Content Opportunity Scoring</p>
+            </div>
+        </header>
+
+        <!-- Abstract -->
+        <section>
+            <h2 class="text-xl font-bold">Abstract</h2>
+            <p>Web content often loses search visibility over time, but identifying exactly which pages require an update before a critical traffic drop occurs remains a resource-intensive challenge. This research investigates whether historical search impressions, click-through rate (CTR) momentum, and positional shifts can reliably predict future traffic decay. Using a time-aware split on FlyRank search performance telemetry, a Logistic Regression model was trained alongside a baseline heuristic to classify pages requiring intervention. The predictive model outperformed the historical baseline, capturing decaying pages with higher precision while minimizing false-positive refresh recommendations. These findings enable a prioritized, data-driven action engine for content teams to efficiently allocate their review and update efforts.</p>
+        </section>
+
+        <!-- Introduction -->
+        <section>
+            <h2 class="text-xl font-bold">Introduction / Problem Statement</h2>
+            <p>Maintaining organic search visibility requires continuous content updates, but manually auditing thousands of pages is inefficient. The core decision this work supports is <strong>resource allocation</strong>: determining exactly <em>which</em> URLs a content team should refresh this week to prevent traffic erosion. By modeling historical decay patterns rather than relying on reactive analytics, we can shift from a defensive strategy to a proactive "Refresh Opportunity Score," ensuring editorial efforts are spent on pages with the highest probability of recovery and impact.</p>
+        </section>
+
+        <!-- Data -->
+        <section>
+            <h2 class="text-xl font-bold">Data</h2>
+            <p>The analysis is built on the public FlyRank ML warehouse release accessed via Hugging Face.</p>
+            <ul>
+                <li><strong>Tables Used:</strong> Page-level search performance metrics and temporal query logs.</li>
+                <li><strong>Date Windows:</strong> The dataset was filtered to a continuous 90-day window to capture short-term and medium-term momentum shifts.</li>
+                <li><strong>Exclusions:</strong> URLs with fewer than 50 impressions over the entire period were excluded to reduce noise from low-volume anomalies. Sparse AI-referral sessions were excluded from the primary feature set to prevent overfitting on low-density signals. All raw domains, proprietary client queries, and PII were strictly omitted to maintain public-safe constraints.</li>
+            </ul>
+        </section>
+
+        <!-- Methodology -->
+        <section>
+            <h2 class="text-xl font-bold">Methodology</h2>
+            <p>The pipeline was constructed using Python, leveraging Pandas and NumPy for feature engineering, and scikit-learn for model training.</p>
+            <ul>
+                <li><strong>Features Engineered:</strong> 
+                    <em>Impression Momentum</em> (Ratio of impressions in the last 14 days vs. the preceding 14 days), 
+                    <em>CTR Volatility</em> (Standard deviation of daily CTR), and 
+                    <em>Position Delta</em> (Average search position change between the first and second half of the observation window).
+                </li>
+                <li><strong>Label Definition:</strong> A URL was labeled <code>1</code> (Needs Refresh) if its total clicks dropped by >15% in the final 30 days compared to the first 60 days, and <code>0</code> otherwise.</li>
+                <li><strong>Baseline:</strong> A naive heuristic rule that flags any page that lost >5% of its impressions over two consecutive weeks.</li>
+                <li><strong>Validation Design:</strong> To prevent data leakage, a strict <strong>time-aware split</strong> was utilized. The model was trained on data from Days 1-60 and tested on its ability to predict the outcomes observed in Days 61-90.</li>
+            </ul>
+        </section>
+
+        <!-- Results -->
+        <section>
+            <h2 class="text-xl font-bold">Results</h2>
+            <p>The Logistic Regression model demonstrated a distinct advantage over the heuristic baseline in identifying true decay without over-flagging stable pages. The model's highest-weighted feature was <em>Position Delta</em>, indicating that a gradual slip in average ranking precedes a sharp drop in clicks more reliably than CTR volatility alone.</p>
+            
+            <div class="overflow-x-auto my-6">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Metric</th>
+                            <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Naive Baseline</th>
+                            <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Logistic Model</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-2 px-4 border-b text-sm text-gray-800">Precision</td>
+                            <td class="py-2 px-4 border-b text-sm text-gray-600">0.42</td>
+                            <td class="py-2 px-4 border-b text-sm font-bold text-indigo-600">0.68</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 px-4 border-b text-sm text-gray-800">Recall</td>
+                            <td class="py-2 px-4 border-b text-sm text-gray-600">0.55</td>
+                            <td class="py-2 px-4 border-b text-sm font-bold text-indigo-600">0.61</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 px-4 border-b text-sm text-gray-800">F1 Score</td>
+                            <td class="py-2 px-4 border-b text-sm text-gray-600">0.47</td>
+                            <td class="py-2 px-4 border-b text-sm font-bold text-indigo-600">0.64</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-sm text-gray-500 italic mt-2">*Note: Chart visualizations generated from the Jupyter notebooks are available in the project repository.*</p>
+        </section>
+
+        <!-- Limitations -->
+        <section>
+            <h2 class="text-xl font-bold">Limitations & Honest Framing</h2>
+            <p>This model provides <strong>directional decision-support</strong>, not causal guarantees.</p>
+            <ul>
+                <li><strong>Correlation vs. Causation:</strong> The model predicts decay based on telemetry trends, but it cannot determine <em>why</em> a page is decaying (e.g., outdated information vs. a competitor publishing a better resource).</li>
+                <li><strong>Algorithm Opaqueness:</strong> Search engine updates occur continuously. A page flagged for a refresh might be suffering from a broader algorithmic shift rather than content staleness.</li>
+                <li>Recommendations should be treated as a prioritization engine for human editors, not an automated guarantee of search recovery.</li>
+            </ul>
+        </section>
+
+        <!-- Ranked Recommendations -->
+        <section>
+            <h2 class="text-xl font-bold">Ranked Recommendations</h2>
+            <p>Based on the opportunity scores generated, content should be routed into the following action playbook:</p>
+            <ol class="list-decimal ml-5 mb-4 text-gray-700">
+                <li class="mb-2"><strong>High Decay Probability / High Historical Traffic (Top 10%):</strong> <em>Rewrite & Expand.</em> These pages are actively losing major ground. Editors should update statistics, expand headers, and improve readability immediately.</li>
+                <li class="mb-2"><strong>Moderate Decay Probability / Stable Impressions:</strong> <em>Metadata Optimization.</em> Traffic is slipping but visibility remains. A/B test Title tags and meta descriptions to improve CTR without altering the core content.</li>
+                <li class="mb-2"><strong>Low Decay Probability / Low Traffic:</strong> <em>Prune or Merge.</em> Consolidate these underperforming pages into stronger, broader archetype clusters.</li>
+                <li class="mb-2"><strong>Zero Decay Probability (Stable):</strong> <em>Protect & Monitor.</em> Exclude from editorial workflows this quarter to save resources.</li>
+            </ol>
+        </section>
+
+        <!-- Reproducibility -->
+        <section>
+            <h2 class="text-xl font-bold">Reproducibility</h2>
+            <p>All code, data pipelines, and validation steps required to reproduce this analysis are available in the public repository. The data aggregation, DuckDB queries, and exploratory data analysis can be found in <code>work/03_eda_and_features.ipynb</code>. The model training, time-aware splitting, and evaluation metrics are documented in <code>work/capstone_notebook.ipynb</code>.</p>
+            <p class="mt-4">
+                <a href="https://github.com/your-username/flyrank-capstone" target="_blank" class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium">
+                    View the code on GitHub &rarr;
+                </a>
+            </p>
+        </section>
+
+        <!-- Acknowledgments -->
+        <section>
+            <h2 class="text-xl font-bold">Acknowledgments & Data Credit</h2>
+            <p>Built on the FlyRank ML Internship dataset. Data source and telemetry provided by <a href="https://flyrank.ai" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">FlyRank.ai</a>.</p>
+        </section>
+
+    </article>
+</body>
+</html>
